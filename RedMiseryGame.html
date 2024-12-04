@@ -1,0 +1,334 @@
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<body style="background-color: rgb(48, 41, 49); overflow: hidden;">
+
+    <div id="Game" class=""
+        style=" border: 10px solid rgb(227, 227, 230); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); position: absolute; transform-origin: center center; background-color: lightsalmon;">
+        <canvas id="GameCanvas" style="width: 100%; height: 100%; position: absolute; top: 0;"></canvas>
+        <div
+            style="position: absolute; background-size: cover; background-image: url(Smog.png); width: 100%; height: 100%; margin: 0; top: 0; left: 0; z-index: -1;">
+        </div>
+        <div
+            style="position: absolute; background-size: cover; background-image: url(Cliffs.png); width: 100%; height: 100%; margin: 0; top: 0; z-index: -1;">
+        </div>
+
+    </div>
+
+</body>
+
+
+<style>
+</style>
+
+<script>
+    let game = document.getElementById("Game");
+    let gameCanvas = document.getElementById("GameCanvas");
+    const ctx = gameCanvas.getContext('2d');
+
+    function GameEngine() {
+        this.gameObjects = [];
+
+        this.lastTime = 0;
+        this.targetFPS = 30;
+        this.frameInterval = 1000 / this.targetFPS;
+
+        this.gameLoop = function (timeStamp) {
+            const deltaTime = timeStamp - this.lastTime;
+
+            if (deltaTime >= this.frameInterval) {
+                this.lastTime = timeStamp;
+
+                ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+                this.gameObjects.forEach(element => {
+                    if (element.name == "Orobas") {
+                        // element.x++;
+                    }
+                    try {
+                        element.draw();
+                    } catch (e) {
+                        console.log(e);
+                    }
+
+                });
+
+            }
+        }
+
+    }
+
+    let gameEngine = new GameEngine;
+
+    function startGameEngine() {
+        function loop(timeStamp) {
+            gameEngine.gameLoop(timeStamp);
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+    }
+    startGameEngine();
+
+
+
+
+    function resizeGame() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        gameCanvas.width = screenHeight * 1.6;
+        gameCanvas.height = screenHeight;
+        game.style.height = screenHeight;
+        game.style.width = (screenHeight * 1.6);
+    }
+
+    resizeGame();
+    window.addEventListener('resize', resizeGame);
+
+
+    function GameObject(iX, iY, imageUrl, width, height, type) {
+        this.x = iX;
+        this.y = iY;
+        this.imageUrl = imageUrl;
+        this.image = new Image();
+        this.image.src = imageUrl;
+        this.width = width;
+        this.height = height;
+        this.type = type;
+
+
+
+        if (imageUrl != "" && imageUrl != null) {
+            this.image.onload = () => {
+                this.draw();
+            }
+        }
+
+
+        gameEngine.gameObjects.push(this);
+
+
+
+        this.draw = function () {
+            if (this.type == "image") {
+                let regulateX = gameCanvas.height / 100;
+                let regulateY = gameCanvas.height / 100;
+                ctx.drawImage(this.image, this.x * regulateX, this.y * regulateY, this.width * regulateX, this.height * regulateY);
+            } else if (this.type == "text") {
+                let regulateX = gameCanvas.height / 100;
+                let regulateY = gameCanvas.height / 100;
+
+                ctx.font = "50px Impact";
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "black";
+                ctx.strokeText(this.imageUrl, this.x * regulateX, this.y * regulateY);
+                ctx.fillStyle = "yellow";
+                ctx.fillText(this.imageUrl, this.x * regulateX, this.y * regulateY);
+            }
+        }
+
+    }
+
+
+
+
+    class Character extends GameObject {
+        constructor(iName, iHP, iMP, iStr, iMag, iEnd, iAgi, iLuc, iX, iY, iImage, iWidth, iHeight, type) {
+            super(iX, iY, iImage, iWidth, iHeight, type);
+            this.name = iName;
+            this.hitPoints = iHP;
+            this.maxHitPoints = iHP;
+            this.manaPoints = iMP;
+            this.maxManaPoints = iMP;
+            this.str = iStr;
+            this.mag = iMag;
+            this.end = iEnd;
+            this.agi = iAgi;
+            this.luc = iLuc;
+            this.x = iX;
+            this.y = iY;
+            this.imageVal = iImage;
+            this.xScale = iWidth;
+            this.yScale = iHeight;
+
+            this.TakeDamage = function (iDamage) {
+                let damage = iDamage;
+                damage -= this.end;
+                if (damage < 1) {
+                    damage = 1;
+                }
+                this.hitPoints -= damage;
+                console.log(this.name + " took " + damage + " damage. They have " + this.hitPoints + " HP left");
+            }
+        }
+    }
+
+    ///Damage Types: 0 = Slashing, 1 = Piercing, 2 = Bludgeoning, 3 = Fire
+
+    let Orobas = new Character("Orobas", 100, 30, 20, 8, 24, 7, 12, 10, 45, "OrobasPlaceholder.png", 60, 45, "image");
+    let Griffon = new Character("Griffon", 80, 50, 18, 14, 18, 12, 10, 70, 50, "GriffonPlaceholder.png", 26.2, 39.4, "image");
+    let Mazneth = new Character("Mazneth", 64, 0, 7, 1, 8, 32, 18, 110, 50, "MaznethPlaceholder.png", 22.5, 35.5, "image");
+
+    let grunt1 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 40, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt1HealthStats = new GameObject(40, 30, (grunt1.hitPoints + "/" + grunt1.maxHitPoints + " HP"), 20, 20, "text");
+    let grunt2 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 70, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt2HealthStats = new GameObject(70, 30, (grunt2.hitPoints + "/" + grunt2.maxHitPoints + " HP"), 20, 20, "text");
+    let grunt3 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 110, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt3HealthStats = new GameObject(110, 30, (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP"), 20, 20, "text");
+
+    let OrobasPortrait = new GameObject(1, 1, "OrobasPortrait.png", 20, 20, "image");
+    let OrobasHealthStats = new GameObject(1, 25, (Orobas.hitPoints + "/" + Orobas.maxHitPoints + " HP"), 20, 20, "text");
+    let OrobasManaStats = new GameObject(5, 30, (Orobas.manaPoints + "/" + Orobas.maxManaPoints + " MP"), 20, 20, "text");
+
+    let party = [Orobas, Griffon, Mazneth];
+    let enemies = [grunt1, grunt2, grunt3];
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === " ") {
+            Bite();
+        }
+    })
+
+    class Selecter extends GameObject {
+        constructor(iX, iY, iImage, iWidth, iHeight, type) {
+            super(iX, iY, iImage, iWidth, iHeight, type);
+
+
+            this.selectedIndex = 0;
+            this.maxIndex = 2;
+            this.active = false;
+            this.livingEnemies = [];
+
+            this.CountEnemies = function () {
+                this.livingEnemies = enemies.filter(enemy => enemy.hitPoints > 0);
+
+                if (this.livingEnemies > 0){
+                    this.maxIndex = this.livingEnemies.length-1;
+                    this.active = true;
+                    this.selectedIndex = 0;
+                    this.x = this.livingEnemies[this.selectedIndex].x-15;
+                    this.y = this.livingEnemies[this.selectedIndex].y-15;
+                } else if (this.livingEnemies <= 0){
+                    this.active = false;
+                    this.y = -100;
+                }
+
+            }
+
+            this.NextEnemy = function(){
+
+                if(this.selectedIndex < this.maxIndex){
+                    this.selectedIndex++;
+                    let g = this.livingEnemies[0].x;
+                    this.x = this.livingEnemies[this.selectedIndex].x-15;
+                    this.y = this.livingEnemies[this.selectedIndex].y-15;
+                    console.log("selected Next Enemy. SelectedIndex: " + this.selectedIndex);
+                    var audio = new Audio('MenuMove.wav');
+                    audio.play();
+                }
+            }
+            this.PrevEnemy = function(){
+
+                if(this.selectedIndex > 0){
+                    this.selectedIndex--;
+                    this.x = this.livingEnemies[this.selectedIndex].x-15;
+                    this.y = this.livingEnemies[this.selectedIndex].y-15;
+                    var audio = new Audio('MenuMove.wav');
+                    console.log("selected Previous Enemy. SelectedIndex: " + this.selectedIndex);
+                    audio.play();
+                }
+            }
+
+        }
+    }
+
+    let selecter = new Selecter(50, 50, "Strike.gif", 50, 50, "image");
+    selecter.CountEnemies();
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === "ArrowRight") {
+            selecter.NextEnemy();
+        }
+    })
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === "ArrowLeft") {
+            selecter.PrevEnemy();
+        }
+    })
+
+
+    function Bite() {
+        let target;
+
+
+        target = selecter.livingEnemies[selecter.selectedIndex];
+
+
+        if (target == null) { return }
+
+        let targetX = target.x;
+        let targetY = target.y;
+        let targetW = target.width;
+        let targetH = target.height;
+        target.hitPoints -= Roll(8,6);
+
+
+        //Optimize to have stats be a child of the character object, and possibly make a special class for enemies?
+        if (target.hitPoints <= 0) { target.height = 0; }
+        grunt1HealthStats.imageUrl = (grunt1.hitPoints + "/" + grunt1.maxHitPoints + " HP");
+        grunt2HealthStats.imageUrl = (grunt2.hitPoints + "/" + grunt2.maxHitPoints + " HP");
+        grunt3HealthStats.imageUrl = (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP");
+
+
+
+        let mauling = new GameObject(targetX, targetY, "Bite.gif", 15, 20, "image");
+        const clearMauling = setTimeout(clearMaulingFunction, 500);
+        let biteSounds = ['Maul.wav','Bite.wav']
+        
+        var audio = new Audio(biteSounds[Roll(1,2)]);
+        audio.play();
+        function clearMaulingFunction() {
+            mauling.height = 0;
+        }
+        selecter.CountEnemies();
+    }
+
+    function UpdateGame() {
+
+        party[Roll(1,3)].TakeDamage(Roll(1,50));
+
+        let game = document.getElementById("Game");
+        let gamePrint = "";
+        party.forEach(element => {
+            gamePrint += element.name + ":  -  HP:" + element.hitPoints + "/" + element.maxHitPoints + "  -  SP:" + element.manaPoints + "/" + element.maxManaPoints;
+            gamePrint += "<br>";
+        });
+        enemies.forEach(element => {
+            gamePrint += element.name + ":  -  HP:" + element.hitPoints + "/" + element.maxHitPoints + "  -  SP:" + element.manaPoints + "/" + element.maxManaPoints;
+            gamePrint += "<br>";
+        });
+
+    }
+
+
+    function Roll(count, sides) {
+        let total = 0;
+        for (let i = 0; i < count; i++){
+            total += Math.floor(Math.random() * sides);
+        }
+        return total;
+    }
+
+</script>
+
+
+<!-- 
+
+Acknowledgements:
+
+This code was assisted by online resources including W3Schools, StackOverflow, ChatGPT, and some others.
+That being said I made sure to understand how the code works, as designing my game engine has the main idea of having maximum control, relying on unknown code would go against the point.
+
+I'm probably rambling in my own code commends but honestly I'm really tired and this project had me tearing my hair out at points. This is definitely something I'm going to continue to work on past the semester. Finally making a game engine for my projects is really exciting me.
+
+-->
