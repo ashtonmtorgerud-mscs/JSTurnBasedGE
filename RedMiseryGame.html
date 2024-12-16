@@ -32,19 +32,18 @@
         this.lastTime = 0;
         this.targetFPS = 30;
         this.frameInterval = 1000 / this.targetFPS;
+        this.nextFrameCount = false;
 
         this.gameLoop = function (timeStamp) {
             const deltaTime = timeStamp - this.lastTime;
 
             if (deltaTime >= this.frameInterval) {
                 this.lastTime = timeStamp;
+                this.nextFrameCount = true;
 
                 ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
                 this.gameObjects.forEach(element => {
-                    if (element.name == "Orobas") {
-                        // element.x++;
-                    }
                     try {
                         element.draw();
                     } catch (e) {
@@ -52,7 +51,6 @@
                     }
 
                 });
-
             }
         }
 
@@ -90,14 +88,14 @@
         this.y = iY;
         this.imageUrl = imageUrl;
         this.image = new Image();
-        this.image.src = imageUrl;
         this.width = width;
         this.height = height;
         this.type = type;
 
 
 
-        if (imageUrl != "" && imageUrl != null) {
+        if (imageUrl != "" && type == "image") {
+            this.image.src = imageUrl;
             this.image.onload = () => {
                 this.draw();
             }
@@ -107,18 +105,43 @@
         gameEngine.gameObjects.push(this);
 
 
+        let regulateX = gameCanvas.height / 100;
+        let regulateY = gameCanvas.height / 100;
 
         this.draw = function () {
             if (this.type == "image") {
-                let regulateX = gameCanvas.height / 100;
-                let regulateY = gameCanvas.height / 100;
-                ctx.drawImage(this.image, this.x * regulateX, this.y * regulateY, this.width * regulateX, this.height * regulateY);
-            } else if (this.type == "text") {
-                let regulateX = gameCanvas.height / 100;
-                let regulateY = gameCanvas.height / 100;
 
-                ctx.font = "50px Impact";
+                //
+                ctx.drawImage(this.image, this.x * regulateX, this.y * regulateY, this.width * regulateX, this.height * regulateY);
+
+            } else if (this.type == "text") {
+
+                
+
+                ctx.font = this.width + "px Impact";
                 ctx.lineWidth = 5;
+                ctx.strokeStyle = "black";
+                ctx.strokeText(this.imageUrl, this.x * regulateX, this.y * regulateY);
+                ctx.fillStyle = "yellow";
+                ctx.fillText(this.imageUrl, this.x * regulateX, this.y * regulateY);
+
+
+            } else if (this.type == "textbox") {
+
+                //GetMeasurments
+                ctx.font = this.width + "px Impact";
+                let padding = 10;
+                let textHeight = this.width;
+                let textWidth = ctx.measureText(this.imageUrl).width;
+                ctx.lineWidth = 5;
+
+                //Draw The Rectangle
+                ctx.fillStyle = 'black'; 
+                ctx.fillRect(this.x * regulateX - padding, this.y * regulateY - textHeight, textWidth + padding * 2, textHeight + padding);
+
+
+                //Draw the Text
+
                 ctx.strokeStyle = "black";
                 ctx.strokeText(this.imageUrl, this.x * regulateX, this.y * regulateY);
                 ctx.fillStyle = "yellow";
@@ -127,9 +150,6 @@
         }
 
     }
-
-
-
 
     class Character extends GameObject {
         constructor(iName, iHP, iMP, iStr, iMag, iEnd, iAgi, iLuc, iX, iY, iImage, iWidth, iHeight, type) {
@@ -149,6 +169,7 @@
             this.imageVal = iImage;
             this.xScale = iWidth;
             this.yScale = iHeight;
+            this.initiative = 0;
 
             this.TakeDamage = function (iDamage) {
                 let damage = iDamage;
@@ -157,13 +178,39 @@
                     damage = 1;
                 }
                 this.hitPoints -= damage;
-                console.log(this.name + " took " + damage + " damage. They have " + this.hitPoints + " HP left");
+                // console.log(this.name + " took " + damage + " damage. They have " + this.hitPoints + " HP left");
             }
+
+            this.AgilityCheck = function(){
+                return this.agi + Roll(1,100);
+            }
+
+            this.RollInitiative = function(){
+                this.initiative = this.agi + Roll(1,100);
+                return this.initiative;
+            }
+            
+
+            //This function needs to be fixed badly!
+            this.hop = function(){
+                let originalPosition = this.y;
+                let hopPeak = this.y-15;
+                while (this.y > hopPeak){
+                    setTimeout(this.y--, 333)
+
+                }
+                while (this.y < originalPosition){
+                        this.y++;
+                }
+            }
+
         }
     }
 
     ///Damage Types: 0 = Slashing, 1 = Piercing, 2 = Bludgeoning, 3 = Fire
 
+
+    //construction character(iName, iHP, iMP, iStr, iMag, iEnd, iAgi, iLuc, iX, iY, iImage, iWidth, iHeight, type)
     let Orobas = new Character("Orobas", 100, 30, 20, 8, 24, 7, 12, 10, 45, "OrobasPlaceholder.png", 60, 45, "image");
     let Griffon = new Character("Griffon", 80, 50, 18, 14, 18, 12, 10, 70, 50, "GriffonPlaceholder.png", 26.2, 39.4, "image");
     let Mazneth = new Character("Mazneth", 64, 0, 7, 1, 8, 32, 18, 110, 50, "MaznethPlaceholder.png", 22.5, 35.5, "image");
@@ -175,16 +222,58 @@
     let grunt3 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 110, 30, "GruntChuddie.png", 14.6, 19.7, "image");
     let grunt3HealthStats = new GameObject(110, 30, (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP"), 20, 20, "text");
 
-    let OrobasPortrait = new GameObject(1, 1, "OrobasPortrait.png", 20, 20, "image");
-    let OrobasHealthStats = new GameObject(1, 25, (Orobas.hitPoints + "/" + Orobas.maxHitPoints + " HP"), 20, 20, "text");
-    let OrobasManaStats = new GameObject(5, 30, (Orobas.manaPoints + "/" + Orobas.maxManaPoints + " MP"), 20, 20, "text");
+    // let OrobasPortrait = new GameObject(1, 1, "OrobasPortrait.png", 20, 20, "image");
+    let OrobasHealthStats = new GameObject(30, 90, (Orobas.hitPoints + "/" + Orobas.maxHitPoints + " HP"), 10, 10, "text");
+    let OrobasManaStats = new GameObject(30, 95, (Orobas.manaPoints + "/" + Orobas.maxManaPoints + " MP"), 10, 10, "text");
+    let GriffonHealthStats = new GameObject(75, 90, (Griffon.hitPoints + "/" + Griffon.maxHitPoints + " HP"), 10, 10, "text");
+    let GriffonManaStats = new GameObject(75, 95, (Griffon.manaPoints + "/" + Griffon.maxManaPoints + " MP"), 10, 10, "text");
+    let MaznethHealthStats = new GameObject(110, 90, (Mazneth.hitPoints + "/" + Mazneth.maxHitPoints + " HP"), 10, 10, "text");
+    let MaznethManaStats = new GameObject(110, 95, (Mazneth.manaPoints + "/" + Mazneth.maxManaPoints + " MP"), 10, 10, "text");
+
+    let filledText = new GameObject(50, 50, (Mazneth.hitPoints + "/" + Mazneth.maxHitPoints + " HPassdsdsa"), 30, 10, "textbox");
+
 
     let party = [Orobas, Griffon, Mazneth];
+
     let enemies = [grunt1, grunt2, grunt3];
+
+    function TurnKeeper(){
+        this.totalTurns = 0;
+        this.currentTurn = 0;
+        this.turnCharacter = [];
+        this.everyone = [];
+        
+        this.rollInitiative = function(){
+            totalTurns = party.length + enemies.length;
+            this.everyone = party.concat(enemies);
+            this.everyone.forEach(token => {token.RollInitiative()})
+            this.everyone.sort((a, b) => a.initiative - b.initiative);
+            xPrinter = 5;
+            yprinter = 10;
+            let initiativeTowerText = new GameObject(xPrinter, yprinter, ("Turn Order"), 20, 20, "text");
+            this.everyone.forEach(token => {
+                yprinter += 3;
+                console.log(token.initiative);
+                let initiativeTowerText = new GameObject(xPrinter, yprinter, (token.name + ""), 20, 20, "text");
+            })
+            
+
+        }
+
+        this.passTurn = function(){
+            this.everyone.push(this.everyone.shift());
+        }
+    }
+
+
+
+    let turnkeeper = new TurnKeeper;
+    turnkeeper.rollInitiative();
 
     document.addEventListener('keydown', function (event) {
         if (event.key === " ") {
             Bite();
+            turnkeeper.passTurn();
         }
     })
 
@@ -194,20 +283,26 @@
 
 
             this.selectedIndex = 0;
-            this.maxIndex = 2;
+            this.maxIndex = 0;
             this.active = false;
             this.livingEnemies = [];
 
             this.CountEnemies = function () {
-                this.livingEnemies = enemies.filter(enemy => enemy.hitPoints > 0);
+                this.livingEnemies = [];
+                enemies.forEach((enemy) => {
+                    if (enemy.hitPoints > 0){
+                        this.livingEnemies.push(enemy);
+                    }
+                    
+                });
 
-                if (this.livingEnemies > 0){
-                    this.maxIndex = this.livingEnemies.length-1;
+                this.selectedIndex = 0;
+                if (this.livingEnemies.length > 0){
+                    this.maxIndex = 2;
                     this.active = true;
-                    this.selectedIndex = 0;
                     this.x = this.livingEnemies[this.selectedIndex].x-15;
                     this.y = this.livingEnemies[this.selectedIndex].y-15;
-                } else if (this.livingEnemies <= 0){
+                } else if (this.livingEnemies.length <= 0){
                     this.active = false;
                     this.y = -100;
                 }
@@ -221,7 +316,7 @@
                     let g = this.livingEnemies[0].x;
                     this.x = this.livingEnemies[this.selectedIndex].x-15;
                     this.y = this.livingEnemies[this.selectedIndex].y-15;
-                    console.log("selected Next Enemy. SelectedIndex: " + this.selectedIndex);
+                    // console.log("selected Next Enemy. SelectedIndex: " + this.selectedIndex);
                     var audio = new Audio('MenuMove.wav');
                     audio.play();
                 }
@@ -233,7 +328,7 @@
                     this.x = this.livingEnemies[this.selectedIndex].x-15;
                     this.y = this.livingEnemies[this.selectedIndex].y-15;
                     var audio = new Audio('MenuMove.wav');
-                    console.log("selected Previous Enemy. SelectedIndex: " + this.selectedIndex);
+                    // console.log("selected Previous Enemy. SelectedIndex: " + this.selectedIndex);
                     audio.play();
                 }
             }
@@ -260,7 +355,7 @@
     function Bite() {
         let target;
 
-
+        Orobas.hop();
         target = selecter.livingEnemies[selecter.selectedIndex];
 
 
@@ -318,6 +413,8 @@
         }
         return total;
     }
+    
+
 
 </script>
 
