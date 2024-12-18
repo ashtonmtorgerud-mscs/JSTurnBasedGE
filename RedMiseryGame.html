@@ -1,6 +1,9 @@
+<!-- Bootstrap imports -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="manifest" href="manifest.json">
 
+<!-- Simple body for the center div and game canvas -->
 <body style="background-color: rgb(48, 41, 49); overflow: hidden;">
 
     <div id="Game" class=""
@@ -18,22 +21,26 @@
 </body>
 
 
-<style>
-</style>
+
 
 <script>
+
+    ///Delcaration of the foundational elements
     let game = document.getElementById("Game");
     let gameCanvas = document.getElementById("GameCanvas");
     const ctx = gameCanvas.getContext('2d');
 
+    //The game engine is what interprets game objects to be displayed on the canvas
     function GameEngine() {
-        this.gameObjects = [];
 
+        //Variables
+        this.gameObjects = [];
         this.lastTime = 0;
         this.targetFPS = 30;
         this.frameInterval = 1000 / this.targetFPS;
         this.nextFrameCount = false;
 
+        ///The loop interprets time and if enough time has passed to be a new "frame", it clears the canvas and redraws the sprites
         this.gameLoop = function (timeStamp) {
             const deltaTime = timeStamp - this.lastTime;
 
@@ -56,6 +63,7 @@
 
     }
 
+    //Game engine declaration and ignition
     let gameEngine = new GameEngine;
 
     function startGameEngine() {
@@ -69,7 +77,7 @@
 
 
 
-
+    ///Display resize proofing
     function resizeGame() {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
@@ -82,8 +90,47 @@
     resizeGame();
     window.addEventListener('resize', resizeGame);
 
+    
+    function checkVictory(){
 
+        //Variable declarations
+        let partyWin = true;
+        let enemyWin = true;
+
+
+        //check if the party wins
+        enemies.forEach(enemy => {
+            if (enemy.hitPoints > 0){
+                partyWin = false;
+            }
+        })
+
+        //check if the enemy wins
+        party.forEach(player => {
+            if (player.hitPoints > 0){
+                enemyWin = false;
+            }
+        })
+
+        //Check if a win condition is true
+        if (enemyWin){
+            let filledText = new GameObject(35, 35, ("Enemy Victory"), 180, 10, "textbox");
+            console.log("Enemy Victory");
+            return;
+        } else if (partyWin){
+            let filledText = new GameObject(35, 35, ("Party Victory"), 180, 10, "textbox");
+            console.log("Party Victory");
+            return;
+        }
+        
+
+    }
+
+
+    //GameObject Template
     function GameObject(iX, iY, imageUrl, width, height, type) {
+
+        //Variables
         this.x = iX;
         this.y = iY;
         this.imageUrl = imageUrl;
@@ -93,7 +140,7 @@
         this.type = type;
 
 
-
+        //Ensures only image type objects are rendered as images
         if (imageUrl != "" && type == "image") {
             this.image.src = imageUrl;
             this.image.onload = () => {
@@ -101,23 +148,23 @@
             }
         }
 
-
+        //Inputs the objects to the engine to be drawn
         gameEngine.gameObjects.push(this);
 
-
+        //Sets sprites to be drawn at a constant size regardless of the screen.
         let regulateX = gameCanvas.height / 100;
         let regulateY = gameCanvas.height / 100;
 
+        //Draws Sprites
         this.draw = function () {
             if (this.type == "image") {
 
-                //
+                //Draw a sprite using the inputted transform 
                 ctx.drawImage(this.image, this.x * regulateX, this.y * regulateY, this.width * regulateX, this.height * regulateY);
 
             } else if (this.type == "text") {
 
-                
-
+                //Draw Normal Text, using imageURL as the text
                 ctx.font = this.width + "px Impact";
                 ctx.lineWidth = 5;
                 ctx.strokeStyle = "black";
@@ -151,6 +198,7 @@
 
     }
 
+    //Subclass of the gameobject class that holds information for players and enemies 
     class Character extends GameObject {
         constructor(iName, iHP, iMP, iStr, iMag, iEnd, iAgi, iLuc, iX, iY, iImage, iWidth, iHeight, type) {
             super(iX, iY, iImage, iWidth, iHeight, type);
@@ -177,9 +225,7 @@
                 if (damage < 1) {
                     damage = 1;
                 }
-                this.hitPoints -= damage;
-                // console.log(this.name + " took " + damage + " damage. They have " + this.hitPoints + " HP left");
-            }
+                this.hitPoints -= damage;            }
 
             this.AgilityCheck = function(){
                 return this.agi + Roll(1,100);
@@ -193,15 +239,15 @@
 
             //This function needs to be fixed badly!
             this.hop = function(){
-                let originalPosition = this.y;
-                let hopPeak = this.y-15;
-                while (this.y > hopPeak){
-                    setTimeout(this.y--, 333)
+                let jumpheight = 10;
+                this.y-=jumpheight
+                setTimeout(() => {this.y+=jumpheight}, 500); 
+            }
 
-                }
-                while (this.y < originalPosition){
-                        this.y++;
-                }
+            this.dodge = function(){
+                let dodgeWidth = 10;
+                this.x+=dodgeWidth
+                setTimeout(() => {this.x-=dodgeWidth}, 500); 
             }
 
         }
@@ -209,91 +255,161 @@
 
     ///Damage Types: 0 = Slashing, 1 = Piercing, 2 = Bludgeoning, 3 = Fire
 
+    //Gameobjects for grunts and their stats
+    let grunt1 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 40, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt1HealthStats = new GameObject(40, 30, (grunt1.hitPoints + "/" + grunt1.maxHitPoints + " HP"), 40, 20, "text");
+    let grunt2 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 70, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt2HealthStats = new GameObject(70, 30, (grunt2.hitPoints + "/" + grunt2.maxHitPoints + " HP"), 40, 20, "text");
+    let grunt3 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 110, 30, "GruntChuddie.png", 14.6, 19.7, "image");
+    let grunt3HealthStats = new GameObject(110, 30, (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP"), 40, 20, "text");
 
+    //Party gameobjects declaration
     //construction character(iName, iHP, iMP, iStr, iMag, iEnd, iAgi, iLuc, iX, iY, iImage, iWidth, iHeight, type)
     let Orobas = new Character("Orobas", 100, 30, 20, 8, 24, 7, 12, 10, 45, "OrobasPlaceholder.png", 60, 45, "image");
     let Griffon = new Character("Griffon", 80, 50, 18, 14, 18, 12, 10, 70, 50, "GriffonPlaceholder.png", 26.2, 39.4, "image");
-    let Mazneth = new Character("Mazneth", 64, 0, 7, 1, 8, 32, 18, 110, 50, "MaznethPlaceholder.png", 22.5, 35.5, "image");
-
-    let grunt1 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 40, 30, "GruntChuddie.png", 14.6, 19.7, "image");
-    let grunt1HealthStats = new GameObject(40, 30, (grunt1.hitPoints + "/" + grunt1.maxHitPoints + " HP"), 20, 20, "text");
-    let grunt2 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 70, 30, "GruntChuddie.png", 14.6, 19.7, "image");
-    let grunt2HealthStats = new GameObject(70, 30, (grunt2.hitPoints + "/" + grunt2.maxHitPoints + " HP"), 20, 20, "text");
-    let grunt3 = new Character("Grunt", 60, 20, 16, 12, 12, 10, 12, 110, 30, "GruntChuddie.png", 14.6, 19.7, "image");
-    let grunt3HealthStats = new GameObject(110, 30, (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP"), 20, 20, "text");
-
-    // let OrobasPortrait = new GameObject(1, 1, "OrobasPortrait.png", 20, 20, "image");
-    let OrobasHealthStats = new GameObject(30, 90, (Orobas.hitPoints + "/" + Orobas.maxHitPoints + " HP"), 10, 10, "text");
-    let OrobasManaStats = new GameObject(30, 95, (Orobas.manaPoints + "/" + Orobas.maxManaPoints + " MP"), 10, 10, "text");
-    let GriffonHealthStats = new GameObject(75, 90, (Griffon.hitPoints + "/" + Griffon.maxHitPoints + " HP"), 10, 10, "text");
-    let GriffonManaStats = new GameObject(75, 95, (Griffon.manaPoints + "/" + Griffon.maxManaPoints + " MP"), 10, 10, "text");
-    let MaznethHealthStats = new GameObject(110, 90, (Mazneth.hitPoints + "/" + Mazneth.maxHitPoints + " HP"), 10, 10, "text");
-    let MaznethManaStats = new GameObject(110, 95, (Mazneth.manaPoints + "/" + Mazneth.maxManaPoints + " MP"), 10, 10, "text");
-
-    let filledText = new GameObject(50, 50, (Mazneth.hitPoints + "/" + Mazneth.maxHitPoints + " HPassdsdsa"), 30, 10, "textbox");
+    let Mazneth = new Character("Mazneth", 64, 0, 7, 1, 8, 48, 18, 110, 50, "MaznethPlaceholder.png", 22.5, 35.5, "image");
 
 
+    //Party Stats gameobjects declaration
+    let OrobasHealthStats = new GameObject(30, 90, (Orobas.hitPoints + "/" + Orobas.maxHitPoints + " HP"), 32, 10, "text");
+    let OrobasManaStats = new GameObject(30, 95, (Orobas.manaPoints + "/" + Orobas.maxManaPoints + " MP"), 32, 10, "text");
+    let GriffonHealthStats = new GameObject(75, 90, (Griffon.hitPoints + "/" + Griffon.maxHitPoints + " HP"), 32, 10, "text");
+    let GriffonManaStats = new GameObject(75, 95, (Griffon.manaPoints + "/" + Griffon.maxManaPoints + " MP"), 32, 10, "text");
+    let MaznethHealthStats = new GameObject(110, 90, (Mazneth.hitPoints + "/" + Mazneth.maxHitPoints + " HP"), 32, 10, "text");
+    let MaznethManaStats = new GameObject(110, 95, (Mazneth.manaPoints + "/" + Mazneth.maxManaPoints + " MP"), 32, 10, "text");
+    
+    //Updates the text in the party stats after taking damage
+    function updatePartyStats(){
+        let partyStatDisplays = [OrobasHealthStats, GriffonHealthStats, MaznethHealthStats];
+        let enemiesStatDisplays = [grunt1HealthStats, grunt2HealthStats, grunt3HealthStats];
+        for (let i = 0; i < 3; i++){
+            partyStatDisplays[i].imageUrl = (party[i].hitPoints + "/" + party[i].maxHitPoints + " HP");
+            if (enemies[i].hitPoints <= 0){
+                enemiesStatDisplays[i].width = 0;
+            }
+        }
+    }
+
+    //Declares the party and enemies in an array to be searched
     let party = [Orobas, Griffon, Mazneth];
-
     let enemies = [grunt1, grunt2, grunt3];
 
+    //The turnkeeper keeps track of the turn order, current turn, and safelocks turns
     function TurnKeeper(){
+
+        //Variables
         this.totalTurns = 0;
         this.currentTurn = 0;
         this.turnCharacter = [];
         this.everyone = [];
+        this.initiativeTokens = [];
         
+        //Initiative Tower declaration
         this.rollInitiative = function(){
-            totalTurns = party.length + enemies.length;
+
+
+            ///Variable Dexlaration
+            
+            //Public Variables
+            let totalTurns = party.length + enemies.length;
             this.everyone = party.concat(enemies);
             this.everyone.forEach(token => {token.RollInitiative()})
-            this.everyone.sort((a, b) => a.initiative - b.initiative);
-            xPrinter = 5;
-            yprinter = 10;
-            let initiativeTowerText = new GameObject(xPrinter, yprinter, ("Turn Order"), 20, 20, "text");
-            this.everyone.forEach(token => {
-                yprinter += 3;
-                console.log(token.initiative);
-                let initiativeTowerText = new GameObject(xPrinter, yprinter, (token.name + ""), 20, 20, "text");
-            })
-            
+            this.everyone.sort((b, a) => a.initiative - b.initiative);
+            this.partyturn = false;
 
+            //Private Variables
+            let xPrinter = 5;
+            let yprinter = 10;
+            let initiativeTowerText = new GameObject(xPrinter, yprinter, ("Turn Order"), 20, 20, "text");
+
+            //Creates the tower
+            for (let i = 0; i < this.everyone.length; i++){
+                yprinter += 3;
+                let initiativeTowerText = new GameObject(xPrinter, yprinter, (this.everyone[i].name + " : " + this.everyone[i].initiative), 20, 20, "text");
+                this.initiativeTokens.push(initiativeTowerText);
+            }
+
+            //Checks who the turn belongs to
+            if (party.includes(this.everyone[0])) {
+                this.partyturn = true;
+            } else if (enemies.includes(this.everyone[0])){
+                this.everyone[0].hop();
+                StrikeParty();
+                this.passTurn(); 
+            }
         }
 
+        //Passes the turn to the next character
         this.passTurn = function(){
+
+            //Pushes the first element to the last element in the everyone array
             this.everyone.push(this.everyone.shift());
+
+            //Updates the initiative tower
+            for (let i = 0; i < this.everyone.length; i++){
+                this.initiativeTokens[i].imageUrl = this.everyone[i].name + " : " +  this.everyone[i].initiative;
+            }
+
+            //Pass the turn if the current character is dead
+            if (this.everyone[0].hitPoints <= 0){
+                    this.passTurn();
+                }
+
+            //Gives the turn to either a party member or enemy
+            if (enemies.includes(this.everyone[0])){
+                this.partyturn = false;
+                this.everyone[0].hop();
+                StrikeParty();
+                setTimeout(() => {this.passTurn()}, 1500);
+            } else if (party.includes(this.everyone[0])) {
+                this.partyturn = true;
+            } else{
+                console.log("The turn belongs to an entity that is neither friend nor foe, the matrix is taking over");
+            }
+
+            //Checks if a side has died
+            checkVictory();
         }
     }
 
 
-
+    //Declare and ignite the turnKeeper
     let turnkeeper = new TurnKeeper;
     turnkeeper.rollInitiative();
 
+    //Player input manager
     document.addEventListener('keydown', function (event) {
-        if (event.key === " ") {
-            Bite();
-            turnkeeper.passTurn();
+        if (event.key === " " && turnkeeper.partyturn) {
+            turnkeeper.partyturn = false;
+            switch(turnkeeper.everyone[0].name){
+                case "Orobas": Bite(8,6,"Bite.gif"); Orobas.hop(); break;
+                case "Griffon": Bite(6,8,"Strike.png"); Griffon.hop(); break;
+                case "Mazneth": Bite(4,12,"Shoot.png"); Mazneth.hop(); break;
+            }
+            setTimeout(() => {turnkeeper.passTurn()}, 1500);
         }
     })
 
+    //The selecter helps the player pick the target enemy
     class Selecter extends GameObject {
         constructor(iX, iY, iImage, iWidth, iHeight, type) {
             super(iX, iY, iImage, iWidth, iHeight, type);
 
-
+            //Variables
             this.selectedIndex = 0;
             this.maxIndex = 0;
             this.active = false;
             this.livingEnemies = [];
 
+            //Counts the enemies
             this.CountEnemies = function () {
+
+                //
                 this.livingEnemies = [];
                 enemies.forEach((enemy) => {
                     if (enemy.hitPoints > 0){
                         this.livingEnemies.push(enemy);
                     }
-                    
                 });
 
                 this.selectedIndex = 0;
@@ -309,6 +425,7 @@
 
             }
 
+            //Moves the Selector and selected index to the next enemy
             this.NextEnemy = function(){
 
                 if(this.selectedIndex < this.maxIndex){
@@ -321,6 +438,8 @@
                     audio.play();
                 }
             }
+
+            //Moves the Selector and selected index to the previous enemy
             this.PrevEnemy = function(){
 
                 if(this.selectedIndex > 0){
@@ -328,7 +447,6 @@
                     this.x = this.livingEnemies[this.selectedIndex].x-15;
                     this.y = this.livingEnemies[this.selectedIndex].y-15;
                     var audio = new Audio('MenuMove.wav');
-                    // console.log("selected Previous Enemy. SelectedIndex: " + this.selectedIndex);
                     audio.play();
                 }
             }
@@ -336,15 +454,18 @@
         }
     }
 
+    //Declare the selector and count the enemies
     let selecter = new Selecter(50, 50, "Strike.gif", 50, 50, "image");
     selecter.CountEnemies();
 
+    //Ticks the selector to the right
     document.addEventListener('keydown', function (event) {
         if (event.key === "ArrowRight") {
             selecter.NextEnemy();
         }
     })
 
+    //Ticks the selector to the left
     document.addEventListener('keydown', function (event) {
         if (event.key === "ArrowLeft") {
             selecter.PrevEnemy();
@@ -352,21 +473,46 @@
     })
 
 
-    function Bite() {
+    //Enemy attack function
+    function StrikeParty(){
+
+        //Variable declarations
+        let targetIndex = Roll(1,3);
+        let target = party[targetIndex];
+        let targetX = target.x;
+        let targetY = target.y;
+        let mauling = new GameObject(targetX, targetY, "strike.png", 15, 20, "image");
+        const clearMauling = setTimeout(clearMaulingFunction, 500);
+        let biteSounds = ['Maul.wav','Bite.wav']
+        var audio = new Audio(biteSounds[Roll(1,2)]);
+        audio.play();
+
+        function clearMaulingFunction() {
+            mauling.height = 0;
+        }
+
+        if (turnkeeper.everyone[0].AgilityCheck() >= (target.agi + 5)){
+            party[targetIndex].TakeDamage(Roll(10,6)+5);
+        } else{
+            party[targetIndex].dodge();
+        }
+        
+        updatePartyStats();
+    }
+
+
+    //Party attack function
+    function Bite(damageDice, damageSides, damageEffect) {
+
+        //Variable Declaration
         let target;
-
-        Orobas.hop();
         target = selecter.livingEnemies[selecter.selectedIndex];
-
-
         if (target == null) { return }
-
         let targetX = target.x;
         let targetY = target.y;
         let targetW = target.width;
         let targetH = target.height;
-        target.hitPoints -= Roll(8,6);
-
+        target.hitPoints -= Roll(damageDice,damageSides);
 
         //Optimize to have stats be a child of the character object, and possibly make a special class for enemies?
         if (target.hitPoints <= 0) { target.height = 0; }
@@ -375,37 +521,23 @@
         grunt3HealthStats.imageUrl = (grunt3.hitPoints + "/" + grunt3.maxHitPoints + " HP");
 
 
-
-        let mauling = new GameObject(targetX, targetY, "Bite.gif", 15, 20, "image");
+        //Create mauling effect
+        let mauling = new GameObject(targetX, targetY, damageEffect, 15, 20, "image");
         const clearMauling = setTimeout(clearMaulingFunction, 500);
         let biteSounds = ['Maul.wav','Bite.wav']
-        
         var audio = new Audio(biteSounds[Roll(1,2)]);
         audio.play();
         function clearMaulingFunction() {
             mauling.height = 0;
         }
+
+        //Update situation
         selecter.CountEnemies();
-    }
-
-    function UpdateGame() {
-
-        party[Roll(1,3)].TakeDamage(Roll(1,50));
-
-        let game = document.getElementById("Game");
-        let gamePrint = "";
-        party.forEach(element => {
-            gamePrint += element.name + ":  -  HP:" + element.hitPoints + "/" + element.maxHitPoints + "  -  SP:" + element.manaPoints + "/" + element.maxManaPoints;
-            gamePrint += "<br>";
-        });
-        enemies.forEach(element => {
-            gamePrint += element.name + ":  -  HP:" + element.hitPoints + "/" + element.maxHitPoints + "  -  SP:" + element.manaPoints + "/" + element.maxManaPoints;
-            gamePrint += "<br>";
-        });
-
+        updatePartyStats();
     }
 
 
+    //Dice Roller
     function Roll(count, sides) {
         let total = 0;
         for (let i = 0; i < count; i++){
@@ -425,6 +557,8 @@ Acknowledgements:
 
 This code was assisted by online resources including W3Schools, StackOverflow, ChatGPT, and some others.
 That being said I made sure to understand how the code works, as designing my game engine has the main idea of having maximum control, relying on unknown code would go against the point.
+
+The sprites for Orobas, Griffon, and Mazneth were drawn by my younger brother Alex. 
 
 I'm probably rambling in my own code commends but honestly I'm really tired and this project had me tearing my hair out at points. This is definitely something I'm going to continue to work on past the semester. Finally making a game engine for my projects is really exciting me.
 
