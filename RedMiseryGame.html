@@ -116,6 +116,7 @@
         if (enemyWin){
             let filledText = new GameObject(35, 35, ("Enemy Victory"), 180, 10, "textbox");
             console.log("Enemy Victory");
+            setTimeout(() => location.reload(), 2000);
             return;
         } else if (partyWin){
             let filledText = new GameObject(35, 35, ("Party Victory"), 180, 10, "textbox");
